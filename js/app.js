@@ -6,30 +6,56 @@ const App = (function () {
   };
 
   const NAV = [
-    { id: 'dashboard', label: 'Dashboard', icon: '▦' },
-    { id: 'pos', label: 'Kasir', icon: '🛒' },
-    { id: 'transactions', label: 'Transaksi', icon: '⇄' },
-    { id: 'reports', label: 'Laporan', icon: '▤' },
-    { id: 'products', label: 'Produk', icon: '▣' },
-    { id: 'customers', label: 'Pelanggan', icon: '◉' },
-    { id: 'purchases', label: 'Pembelian', icon: '⛁' },
-    { id: 'shift', label: 'Shift', icon: '◔' },
-    { id: 'gemini', label: 'AI Copilot', icon: '✦' },
-    { id: 'settings', label: 'Pengaturan', icon: '⚙' }
+    { id: 'dashboard', label: 'Dashboard', icon: '▦', mobile: true },
+    { id: 'pos', label: 'Kasir', icon: '🛒', mobile: true },
+    { id: 'transactions', label: 'Transaksi', icon: '⇄', mobile: true },
+    { id: 'reports', label: 'Laporan', icon: '▤', mobile: true },
+    { id: 'products', label: 'Produk', icon: '▣', mobile: false },
+    { id: 'categories', label: 'Kategori', icon: '📁', mobile: false }, // <-- MENU BARU
+    { id: 'customers', label: 'Pelanggan', icon: '◉', mobile: false },
+    { id: 'purchases', label: 'Pembelian', icon: '⛁', mobile: false },
+    { id: 'shift', label: 'Shift', icon: '◔', mobile: false },
+    { id: 'gemini', label: 'AI Copilot', icon: '✦', mobile: false },
+    { id: 'settings', label: 'Pengaturan', icon: '⚙', mobile: false }
   ];
 
-  /* ---------- Utils ---------- */
+  // 2. GANTI FUNGSI buildNav()
   function buildNav() {
     const rail = document.getElementById('rail-nav');
     const tabbar = document.getElementById('tabbar');
-    const html = NAV.map(function (n) {
+
+    // Desktop Nav (Tampil semua)
+    rail.innerHTML = NAV.map(function (n) {
       return `<button class="nav-item" data-route="${n.id}"><span class="ico">${n.icon}</span><span>${n.label}</span></button>`;
     }).join('');
-    rail.innerHTML = html;
-    tabbar.innerHTML = html;
+
+    // Mobile Nav (Hanya 4 menu utama + tombol "Lainnya")
+    const mobileNav = NAV.filter(function(n) { return n.mobile; });
+    tabbar.innerHTML = mobileNav.map(function (n) {
+      return `<button class="nav-item" data-route="${n.id}"><span class="ico">${n.icon}</span><span>${n.label}</span></button>`;
+    }).join('');
+    
+    tabbar.innerHTML += `<button class="nav-item" id="btn-mobile-more"><span class="ico">☰</span><span>Lainnya</span></button>`;
 
     document.querySelectorAll('.nav-item').forEach(function (b) {
-      b.addEventListener('click', function () { navigate(b.getAttribute('data-route')); });
+      if(b.id !== 'btn-mobile-more') {
+        b.addEventListener('click', function () { navigate(b.getAttribute('data-route')); });
+      }
+    });
+
+    document.getElementById('btn-mobile-more').addEventListener('click', function() {
+      // Buka menu Lainnya dalam bentuk Modal
+      openModal(`
+        <div class="modal-head"><h3>Menu Lainnya</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${NAV.filter(n => !n.mobile).map(n => `
+            <button class="btn ghost" onclick="closeModal(); App.navigate('${n.id}')" style="display:flex;flex-direction:column;gap:8px;padding:16px">
+              <span style="font-size:24px">${n.icon}</span>
+              <span>${n.label}</span>
+            </button>
+          `).join('')}
+        </div>
+      `);
     });
   }
 
@@ -105,6 +131,7 @@ const App = (function () {
       transactions: renderTransactions,
       reports: function (r) { Reports.render(r); },
       products: renderProducts,
+      categories: renderCategories,
       customers: renderCustomers,
       purchases: renderPurchases,
       shift: renderShift,
@@ -228,9 +255,65 @@ const App = (function () {
     });
   }
 
-  function productModal(prod) {
+  async function renderCategories(root) {
+    const list = await API.call('listCategories');
+    root.innerHTML = `
+      <div class="page-head">
+        <div><h1>Kategori Produk</h1><p>Kelola kelompok produk Anda</p></div>
+        <button class="btn primary" id="btn-add-cat">+ Kategori Baru</button>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Nama Kategori</th><th>Deskripsi</th><th>Aksi</th></tr></thead>
+          <tbody>${list.map(function (c) {
+            return `<tr>
+              <td><strong>${esc(c.name)}</strong></td>
+              <td>${esc(c.description || '-')}</td>
+              <td><button class="btn xs ghost" data-edit-cat="${esc(c.category_id)}">Edit</button></td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="3" class="muted">Belum ada kategori</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    `;
+
+    document.getElementById('btn-add-cat').addEventListener('click', function () { catModal(null); });
+    root.querySelectorAll('[data-edit-cat]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        catModal(list.find(function (c) { return c.category_id === b.getAttribute('data-edit-cat'); }));
+      });
+    });
+  }
+
+  function catModal(cat) {
+    const isNew = !cat;
+    cat = cat || {};
+    openModal(`
+      <div class="modal-head">
+        <h3>${isNew ? 'Kategori Baru' : 'Edit Kategori'}</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <label>Nama Kategori</label><input id="cat-name" value="${esc(cat.name || '')}">
+      <label>Deskripsi (Opsional)</label><input id="cat-desc" value="${esc(cat.description || '')}">
+      <button class="btn primary w-full" id="btn-save-cat" style="margin-top:16px">Simpan</button>
+    `);
+    document.getElementById('btn-save-cat').addEventListener('click', async function () {
+      try {
+        await API.call('saveCategory', {
+          category_id: cat.category_id || '',
+          name: document.getElementById('cat-name').value,
+          description: document.getElementById('cat-desc').value
+        });
+        closeModal(); toast('Kategori tersimpan', 'ok'); navigate('categories');
+      } catch (e) { toast(e.message, 'bad'); }
+    });
+  }
+
+  async function productModal(prod) {
     const isNew = !prod;
     prod = prod || {};
+
+    const cats = await API.call('listCategories');
+
     openModal(`
       <div class="modal-head">
         <h3>${isNew ? 'Produk Baru' : 'Edit Produk'}</h3>
@@ -242,7 +325,14 @@ const App = (function () {
         <div style="flex:1"><label>Barcode</label><input id="p-barcode" value="${esc(prod.barcode || '')}"></div>
       </div>
       <div class="row gap">
-        <div style="flex:1"><label>Kategori</label><input id="p-category" value="${esc(prod.category || 'Umum')}"></div>
+        <div style="flex:1">
+          <label>Kategori</label>
+          <select id="p-category">
+            <option value="">— Pilih Kategori —</option>
+            ${cats.map(c => `<option value="${esc(c.name)}" ${prod.category === c.name ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+            ${!cats.length ? `<option value="Umum">Umum (Default)</option>` : ''}
+          </select>
+        </div>
         <div style="flex:1"><label>Unit</label><input id="p-unit" value="${esc(prod.unit || 'pcs')}"></div>
       </div>
       <div class="row gap">

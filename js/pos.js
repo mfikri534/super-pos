@@ -336,11 +336,22 @@ const POS = (function () {
     const t = totals();
     const customers = App.state.customers || [];
 
+    const isAdmin = ['Owner', 'Admin', 'Manager'].includes(App.state.user.role);
+    const defaultDate = new Date().toISOString().slice(0, 16); // Format YYYY-MM-DDTHH:MM
+
     openModal(`
       <div class="modal-head">
         <h3>Pembayaran</h3>
         <button class="modal-close" onclick="closeModal()">✕</button>
       </div>
+
+      ${isAdmin ? `
+      <div style="background:var(--amber-bg); border:1px solid #FDE68A; padding:12px; border-radius:12px; margin-bottom:12px;">
+        <label style="color:var(--amber); margin-top:0">Waktu Transaksi (Khusus Admin)</label>
+        <input type="datetime-local" id="co-date" value="${defaultDate}" style="border-color:#FDE68A">
+        <p class="small" style="color:var(--amber); margin-top:4px">Ubah jika ada transaksi mundur/susulan.</p>
+      </div>
+      ` : ''}
 
       <label>Pelanggan</label>
       <select id="co-customer">
@@ -433,7 +444,7 @@ const POS = (function () {
         }
 
         const payload = {
-          customer_id: customerId,
+          customer_id: document.getElementById('co-customer').value,
           items: state.cart.map(function (it) {
             return { product_id: it.product_id, qty: it.qty, discount: it.discount || 0 };
           }),
@@ -443,6 +454,13 @@ const POS = (function () {
           notes: notes,
           shift_id: App.state.shift ? App.state.shift.shift_id : ''
         };
+
+        if (isAdmin) {
+          const dateInput = document.getElementById('co-date');
+          if (dateInput && dateInput.value) {
+            payload.custom_date = dateInput.value; 
+          }
+        }
 
         const res = await API.call('checkout', payload);
         closeModal();

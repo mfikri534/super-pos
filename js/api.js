@@ -2,6 +2,9 @@
 const API = (function () {
   const LS_URL = 'pos_api_url';
   const LS_TOKEN = 'pos_token';
+  
+  // 1. TAMBAHKAN VARIABEL CACHE DI SINI
+  const cache = {}; 
 
   let baseUrl = localStorage.getItem(LS_URL) || '';
   let token = localStorage.getItem(LS_TOKEN) || '';
@@ -21,6 +24,14 @@ const API = (function () {
 
   async function call(action, payload) {
     if (!baseUrl) throw new Error('URL API belum diset (Pengaturan → Koneksi).');
+
+    const cacheKey = action + JSON.stringify(payload || {});
+    const isCacheable = action.startsWith('list') || action === 'bootstrap' || action === 'dashboard';
+
+    // 2. CEK CACHE SEBELUM FETCH (Jika ada cache yang umurnya < 1 menit, langsung kembalikan datanya)
+    if (isCacheable && cache[cacheKey] && (Date.now() - cache[cacheKey].time < 60000)) {
+      return cache[cacheKey].data;
+    }
 
     let res;
     try {
@@ -47,6 +58,12 @@ const API = (function () {
       }
       throw new Error(json.error || 'API_ERROR');
     }
+
+    // 3. SIMPAN KE CACHE JIKA REQUEST BERHASIL
+    if (isCacheable) {
+      cache[cacheKey] = { data: json.data, time: Date.now() };
+    }
+
     return json.data;
   }
 
