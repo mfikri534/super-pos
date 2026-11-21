@@ -533,7 +533,7 @@ const App = (function () {
 
   /* ---------- Transactions ---------- */
   async function renderTransactions(root) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date().toLocaleDateString('en-CA'); 
     root.innerHTML = `
       <div class="page-head">
         <div><h1>Transaksi</h1><p>Riwayat, void, refund, cetak ulang</p></div>

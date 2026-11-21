@@ -5,7 +5,9 @@ const Reports = (function () {
 
   function presetRange(preset) {
     const now = new Date();
-    const fmtD = function (d) { return d.toISOString().slice(0, 10); };
+    const fmtD = function (d) { 
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); 
+    };
     if (preset === 'today') return { from: fmtD(now), to: fmtD(now) };
     if (preset === 'yesterday') {
       const y = new Date(now); y.setDate(y.getDate() - 1);
