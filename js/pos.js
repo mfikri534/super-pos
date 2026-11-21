@@ -273,7 +273,7 @@ const POS = (function () {
     document.getElementById('btn-checkout').addEventListener('click', openCheckout);
     document.getElementById('btn-hold').addEventListener('click', holdCart);
 
-    root.addEventListener('click', function (e) {
+    root.onclick = function (e) {
       const add = e.target.closest('[data-add]');
       if (add) { addToCart(add.getAttribute('data-add')); return; }
       const del = e.target.closest('[data-del]');
@@ -294,14 +294,14 @@ const POS = (function () {
       }
       const resume = e.target.closest('[data-resume]');
       if (resume) { resumeCart(Number(resume.getAttribute('data-resume'))); return; }
-    });
+    };
 
-    root.addEventListener('change', function (e) {
+    root.onchange = function (e) {
       const q = e.target.getAttribute('data-qty');
       if (q) { setQty(q, Number(e.target.value)); return; }
       const d = e.target.getAttribute('data-disc');
       if (d) { setItemDiscount(d, Number(e.target.value)); }
-    });
+    };
   }
 
   /* ---------- Hold / Resume ---------- */
