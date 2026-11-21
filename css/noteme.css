@@ -191,3 +191,70 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
   }
   .tabbar .nav-item .ico{font-size:16px}
 }
+
+/* ================= RESPONSIVE TABLE (MOBILE) ================= */
+@media (max-width: 768px) {
+  .tbl-wrap {
+    overflow-x: hidden; /* Hilangkan scroll horizontal */
+  }
+  
+  .tbl thead {
+    display: none; /* Sembunyikan header tabel di HP */
+  }
+  
+  .tbl, .tbl tbody, .tbl tr, .tbl td {
+    display: block;
+    width: 100%;
+  }
+  
+  .tbl tr {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    padding: 8px 14px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  
+  .tbl td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13px;
+  }
+  
+  .tbl td:last-child {
+    border-bottom: none;
+  }
+  
+  /* Label Kiri (diambil otomatis oleh JS) */
+  .tbl td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-right: 16px;
+    flex-shrink: 0;
+  }
+  
+  /* Teks Nilai Kanan */
+  .tbl td > * {
+    text-align: right;
+  }
+  
+  .tbl td.num {
+    justify-content: space-between; 
+  }
+  
+  .tbl td.num::before {
+    margin-right: auto;
+  }
+  
+  /* Sembunyikan td yang kosong */
+  .tbl td:empty {
+    display: none;
+  }
+}

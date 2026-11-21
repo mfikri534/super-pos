@@ -1195,6 +1195,8 @@ const App = (function () {
       }
     });
 
+    tableObserver.observe(document.body, { childList: true, subtree: true });
+
     const lastUser = localStorage.getItem('pos_last_user');
     if (lastUser) document.getElementById('login-username').value = lastUser;
 
@@ -1259,4 +1261,34 @@ function openModal(html) {
 function closeModal() {
   document.getElementById('modal-root').innerHTML = '';
 }
+
+/* ================= AUTO RESPONSIVE TABLE ================= */
+// Fungsi ini akan otomatis menambahkan data-label ke setiap <td> berdasarkan <th>
+function applyResponsiveLabels() {
+  document.querySelectorAll('table.tbl').forEach(function(table) {
+    if (table.dataset.responsive === 'true') return; // Lewati jika sudah diproses
+    
+    const headers = Array.from(table.querySelectorAll('thead th')).map(function(th) {
+      return th.textContent.trim();
+    });
+    
+    if (headers.length === 0) return; // Lewati jika tidak ada header
+    
+    table.querySelectorAll('tbody tr').forEach(function(tr) {
+      Array.from(tr.querySelectorAll('td')).forEach(function(td, index) {
+        if (headers[index] && !td.hasAttribute('data-label')) {
+          td.setAttribute('data-label', headers[index]);
+        }
+      });
+    });
+    
+    table.dataset.responsive = 'true'; // Tandai sudah diproses
+  });
+}
+
+// Gunakan MutationObserver untuk memantau setiap perubahan di layar
+// (Saat ganti menu, atau saat buka modal)
+const tableObserver = new MutationObserver(function(mutations) {
+  applyResponsiveLabels();
+});
 document.addEventListener('DOMContentLoaded', function () { App.boot(); });
